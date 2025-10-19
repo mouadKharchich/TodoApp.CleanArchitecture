@@ -3,6 +3,8 @@
 A **.NET 6 Web API** implementing a **Clean Architecture** for a Task Management Application.  
 This project uses **SQL Server** as the database provider and **xUnit** for unit testing.
 
+[Chari Test technique backend.pdf](https://github.com/user-attachments/files/22992596/Chari.Test.technique.backend.pdf)
+
 ---
 
 ## Table of Contents
