@@ -14,8 +14,6 @@ This project uses **SQL Server** as the database provider and **xUnit** for unit
 - [Domain Model](#domain-model)
 - [Technologies](#technologies)
 - [Getting Started](#getting-started)
-- [Testing](#testing)
-- [License](#license)
 
 ---
 
