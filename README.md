@@ -1,2 +1,157 @@
 # TodoApp.CleanArchitecture
-Create .NET Web API 6 for a Task Management Application
+
+A **.NET 6 Web API** implementing a **Clean Architecture** for a Task Management Application.  
+This project uses **SQL Server** as the database provider and **xUnit** for unit testing.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Domain Model](#domain-model)
+- [Technologies](#technologies)
+- [Getting Started](#getting-started)
+- [Testing](#testing)
+- [License](#license)
+
+---
+
+## Features
+
+- User management (CRUD operations)
+- Task management with:
+  - Title, description, status, priority, deadlines
+  - Assignment of tasks to users
+- Assignments tracking between tasks and users
+- Audit fields (CreatedAt, UpdatedAt)
+
+---
+
+## Architecture
+
+The project follows **Clean Architecture principles**:
+
+- **Domain Layer**: Contains entities, enums, and domain logic.
+- **Application Layer**: Contains DTOs, service interfaces, and business logic.
+- **Infrastructure Layer**: Database context and repository implementations.
+- **API Layer**: ASP.NET Core Web API exposing endpoints.
+- **Tests Layer**: Unit tests using xUnit.
+
+This separation ensures **high maintainability**, **testability**, and **scalability**.
+
+---
+
+## Domain Model
+
+### User
+
+### TaskItem
+
+### Assignment
+
+### Domain Relationships
+
+- **User**  
+  Represents an application user. A user can have multiple tasks assigned and multiple task assignments.
+
+- **TaskItem**  
+  Represents a task with properties like `Title`, `Description`, `Status`, `Priority`, and `Deadline`. A task may belong to a user and can have multiple assignments.
+
+- **Assignment**  
+  Represents the many-to-many relationship between users and tasks. Tracks when a task was assigned to a user.
+
+---
+
+## Application Features
+
+### Validation and Filtering
+
+- **FluentValidation** is used for validating DTOs.
+- Supports filtering tasks by:
+  - Status
+  - Priority
+  - User
+  - Deadline ranges
+- Ensures invalid requests return meaningful validation messages.
+
+### Exception Handling
+
+- Centralized **global exception handler** using middleware.
+- Custom exceptions for:
+  - `NotFoundException`
+  - `ValidationException`
+  - `UnauthorizedAccessException`
+- Returns consistent JSON error responses with status codes and messages.
+
+### AutoMapper
+
+- Maps between **Domain Entities** and **DTOs**.
+- Ensures clean separation between domain layer and API layer.
+- Example mappings:
+  - `User` → `UserResponseDto`
+  - `TaskItem` → `TaskItemResponseDto`
+  - `Assignment` → `AssignmentResponseDto`
+
+### JWT Authentication
+
+- Users register/login to receive a **JWT Bearer token**.
+- Token contains user claims for secure access to protected endpoints.
+- Protected API routes require `Authorization: Bearer {token}` header.
+- JWT settings configurable in `appsettings.json`.
+
+### Unit Testing with xUnit
+
+- **xUnit** is used for unit tests.
+- **Moq** is used for mocking dependencies in services and repositories.
+- Typical tests cover:
+  - User registration and authentication
+  - Task creation, update, deletion
+  - Assignment management
+  - Exception scenarios and validation failures
+- Tests ensure the application adheres to business rules without relying on a real database.
+
+---
+
+## Technologies
+
+- **.NET 6** (C#)
+- **ASP.NET Core Web API**
+- **Entity Framework Core** (SQL Server)
+- **xUnit** (unit testing)
+- **Moq** (mocking)
+- **JWT** (authentication)
+- **Mapper** (Manual mapping)
+- **FluentValidation** (DTO validation)
+- **Swagger/OpenAPI** (API documentation)
+
+---
+
+## Getting Started
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/TodoApp.CleanArchitecture.git
+cd TodoApp
+```
+
+2. Update the connection string in appsettings.Development.json:
+3. Ensure your SQL Server database is running.
+4. Create the initial migration and update the database:
+
+```bash
+# Create migration
+dotnet ef migrations add [Migration-name("Initilisation")] --project TodoApp.Infrastructure --startup-project TodoApp.API
+```
+
+```bash
+# Apply migration to database
+dotnet ef database update --project TodoApp.Infrastructure --startup-project TodoApp.API
+```
+
+5. Run the application:
+
+```bash
+dotnet run --project TodoApp.API
+```
