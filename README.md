@@ -155,3 +155,5 @@ dotnet ef database update --project TodoApp.Infrastructure --startup-project Tod
 ```bash
 dotnet run --project TodoApp.API
 ```
+<img width="1287" height="881" alt="image" src="https://github.com/user-attachments/assets/6695088f-b30c-4391-a51b-08fe63107faa" />
+
