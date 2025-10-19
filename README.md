@@ -44,11 +44,11 @@ This separation ensures **high maintainability**, **testability**, and **scalabi
 
 ## Domain Model
 
-### User
+-- **User**
 
-### TaskItem
+-- **TaskItem**
 
-### Assignment
+-- **Assignment**
 
 ### Domain Relationships
 
@@ -155,5 +155,21 @@ dotnet ef database update --project TodoApp.Infrastructure --startup-project Tod
 ```bash
 dotnet run --project TodoApp.API
 ```
-<img width="1287" height="881" alt="image" src="https://github.com/user-attachments/assets/6695088f-b30c-4391-a51b-08fe63107faa" />
 
+6. To run unit tests, go to the `Tests` folder → `TodoApp.ApplicationTests` project and run all the tests you need.
+
+7. All API endpoints require authentication except the public APIs like **Get Tasks** and **Get Task By User**.
+
+8. The Task API supports parameters for:
+
+- **Search**: Filter tasks by title, description, or assigned user.
+- **Pagination**: Specify page number and page size.
+- **Filter**: Filter tasks by status, priority, or due date.
+
+Example API request:
+
+```bash
+GET /api/tasks?search=meeting&pageNumber=1&pageSize=10&status=Pending
+```
+
+<img width="1287" height="881" alt="image" src="https://github.com/user-attachments/assets/6695088f-b30c-4391-a51b-08fe63107faa" />
