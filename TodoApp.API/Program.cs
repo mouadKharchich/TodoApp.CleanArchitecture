@@ -1,17 +1,20 @@
 using System.Text;
 using Asp.Versioning.ApiExplorer;
 using Asp.Versioning.Conventions;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TodoApp.API.Middlewares;
+using TodoApp.Application;
 using TodoApp.Application.Dtos.JWT;
 using TodoApp.Application.Interfaces;
 using TodoApp.Application.Interfaces.IRepositories;
 using TodoApp.Application.Interfaces.IServices;
 using TodoApp.Application.Services;
+using TodoApp.Application.Validators.Users;
 using TodoApp.Infrastructure.Persistences;
 using TodoApp.Infrastructure.Repositories;
 
@@ -141,6 +144,10 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+// Add FluentValidation
+builder.Services.AddControllers()
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssembly(typeof(ApplicationAssemblyMarker).Assembly));
+
 builder.Services.AddAuthorization();
 
 // builder app
@@ -159,7 +166,6 @@ if (app.Environment.IsDevelopment())
                 description.GroupName.ToUpperInvariant());
         }
     });
-
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

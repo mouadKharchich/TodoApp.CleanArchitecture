@@ -13,12 +13,10 @@ namespace TodoApp.API.Controllers;
 public class AssignmentController: ControllerBase
 {
     private readonly IAssignmentService _assignmentService;
-    private readonly ILogger<ErrorResponse> _logger;
 
-    public AssignmentController(IAssignmentService assignmentService, ILogger<ErrorResponse> logger)
+    public AssignmentController(IAssignmentService assignmentService)
     {
         _assignmentService = assignmentService;
-        _logger = logger;
     }
 
     [HttpGet]

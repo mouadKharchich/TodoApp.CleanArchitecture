@@ -18,12 +18,10 @@ namespace TodoApp.API.Controllers;
 public class TaskItemsController : ControllerBase
 {
     private readonly ITaskItemService _taskItemService;
-    private readonly ILogger<ErrorResponse> _logger;
 
-    public TaskItemsController(ITaskItemService taskItemService, ILogger<ErrorResponse> logger)
+    public TaskItemsController(ITaskItemService taskItemService)
     {
         _taskItemService = taskItemService;
-        _logger = logger;
     }
 
     [HttpGet]

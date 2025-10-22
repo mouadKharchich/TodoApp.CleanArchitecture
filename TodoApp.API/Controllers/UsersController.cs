@@ -14,13 +14,11 @@ namespace TodoApp.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
-    private readonly ILogger<ErrorResponse> _logger;
 
 
-    public UsersController(IUserService userService, ILogger<ErrorResponse> logger)
+    public UsersController(IUserService userService)
     {
         _userService = userService;
-        _logger = logger;
     }
 
     [HttpGet]
