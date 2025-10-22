@@ -1,15 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TodoApp.Application.Common.Enums;
-using TodoApp.Application.Common.Exceptions;
 using TodoApp.Application.Common.Models;
 using TodoApp.Application.Dtos.TaskItem;
 using TodoApp.Application.Dtos.User;
 using TodoApp.Application.Interfaces.IServices;
 using TodoApp.Domain.Enums;
 using TaskStatus = TodoApp.Domain.Enums.TaskStatus;
-using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace TodoApp.API.Controllers;
 
@@ -31,170 +29,64 @@ public class TaskItemsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TaskItemResponseDto>>> GetAll()
     {
-        try
-        {
-            var response = await _taskItemService.GetAllTasksAsync();
-            return Ok(response);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        var response = await _taskItemService.GetAllTasksAsync();
+        return Ok(response);
     }
 
     [HttpGet("parameters")]
     public async Task<ActionResult<IEnumerable<TaskItemResponseDto>>> GetTaskItemsParameters([FromQuery]TaskItemQueryParameters queryParameters)
     {
-        try
-        {
-            var response = await _taskItemService.GetTasksByQueryAsync(queryParameters);
-            return Ok(response);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        var response = await _taskItemService.GetTasksByQueryAsync(queryParameters);
+        return Ok(response);
     }
     
     [HttpGet("{taskItemId}")]
     public async Task<ActionResult<TaskItemResponseDto>> GetById(Guid taskItemId)
     {
-        try
-        {
-            var item = await _taskItemService.GetTaskByIdAsync(taskItemId);
-            return Ok(item);
-        }
-        catch (NotFoundException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.NotFound, "Task Item not found", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.NotFound, errorResponse);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+         var item = await _taskItemService.GetTaskByIdAsync(taskItemId);
+         return Ok(item);
     }
 
     [HttpPost]
     [Authorize]
     public async Task<ActionResult<TaskItemResponseDto>> Create(TaskItemRequestDto item)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToArray();
-                throw new ValidationException(string.Join("; ", errors));
-            }
-            var createdTask = await _taskItemService.AddTaskAsync(item);
-            return Ok(createdTask);
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToArray();
+            throw new ValidationException(string.Join("; ", errors));
         }
-        catch (ValidationException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.BadRequest, "Validation error while creating task Item", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.BadRequest, errorResponse);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        
+        var createdTask = await _taskItemService.AddTaskAsync(item);
+        return Ok(createdTask);
     }
 
     [HttpPut("{taskItemId}")]
     [Authorize]
     public async Task<ActionResult> Update(Guid? taskItemId, TaskItemUpdateDto item)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (taskItemId == null)
-            {
-                var errorResponse = new ErrorResponse((int)ErrorStatus.BadRequest, "Bad Request", "Task ID is required",_logger);
-                return BadRequest(errorResponse);
-            }
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToArray();
-                throw new ValidationException(string.Join("; ", errors));
-            }
-            var updatedTask = await _taskItemService.UpdateTaskAsync(taskItemId, item);
-            return Ok(updatedTask);
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToArray();
+            throw new ValidationException(string.Join("; ", errors));
         }
-        catch (ValidationException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.BadRequest, "Validation error while updating task Item", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.BadRequest, errorResponse);
-        }
-        catch (NotFoundException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.NotFound, "Task Item not found", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.NotFound, errorResponse);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        
+        var updatedTask = await _taskItemService.UpdateTaskAsync(taskItemId, item);
+        return Ok(updatedTask);
     }
 
     [HttpDelete("{taskItemId}")]
     [Authorize]
     public async Task<ActionResult> Delete(Guid taskItemId)
     {
-        try
-        {
-            await _taskItemService.DeleteTaskAsync(taskItemId);
-            return NoContent();
-        }
-        catch (NotFoundException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.NotFound, "Task Item not found", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.NotFound, errorResponse);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        await _taskItemService.DeleteTaskAsync(taskItemId);
+        return NoContent();
     }
     
     /* Assign user to task */
@@ -202,19 +94,17 @@ public class TaskItemsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> AssignUser(Guid taskId, [FromBody] AssignUserDto dto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            var updatedTask = await _taskItemService.AssignUserToTaskAsync(taskId, dto.UserId);
-            return Ok(updatedTask);
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToArray();
+            throw new ValidationException(string.Join("; ", errors));
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new ErrorResponse(404, ex.Message));
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new ErrorResponse(400, ex.Message));
-        }
+        
+        var updatedTask = await _taskItemService.AssignUserToTaskAsync(taskId, dto.UserId);
+        return Ok(updatedTask);
     }
     
     /* Update Status */
@@ -222,15 +112,17 @@ public class TaskItemsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateStatus(Guid taskId, [FromBody] UpdateStatusDto dto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            var updatedTask = await _taskItemService.UpdateStatusAsync(taskId, (TaskStatus)dto.Status);
-            return Ok(updatedTask);
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToArray();
+            throw new ValidationException(string.Join("; ", errors));
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new ErrorResponse(404, ex.Message));
-        }
+        
+        var updatedTask = await _taskItemService.UpdateStatusAsync(taskId, (TaskStatus)dto.Status);
+        return Ok(updatedTask);
     }
     
     /* Update Priority */
@@ -238,15 +130,17 @@ public class TaskItemsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdatePriority(Guid taskId, [FromBody] UpdatePriorityDto dto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            var updatedTask = await _taskItemService.UpdatePriorityAsync(taskId, (PriorityLevel)dto.Priority);
-            return Ok(updatedTask);
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToArray();
+            throw new ValidationException(string.Join("; ", errors));
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new ErrorResponse(404, ex.Message));
-        }
+        
+        var updatedTask = await _taskItemService.UpdatePriorityAsync(taskId, (PriorityLevel)dto.Priority);
+        return Ok(updatedTask);
     }
     
 }

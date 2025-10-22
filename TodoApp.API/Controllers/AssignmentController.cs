@@ -1,7 +1,5 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using TodoApp.Application.Common.Enums;
-using TodoApp.Application.Common.Exceptions;
 using TodoApp.Application.Common.Models;
 using TodoApp.Application.Dtos.Assignment;
 using TodoApp.Application.Interfaces.IServices;
@@ -26,68 +24,24 @@ public class AssignmentController: ControllerBase
     [HttpGet]
     public async Task<ActionResult<AssignmentResponseDto>> GetAssignmentsAsync()
     {
-        try
-        {
-            var response = await _assignmentService.GetAllAssignmentsAsync();
-            return Ok(response);
-        } 
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+     var response = await _assignmentService.GetAllAssignmentsAsync();
+     return Ok(response);
     }
     
     // Get All asignments of Task Item by TaskId
     [HttpGet("taskItems/{taskItemId}")]
     public async Task<ActionResult<AssignmentResponseDto>> GetAssignmentsByTaskIdAsync(Guid taskItemId)
     {
-        try
-        {
-            var response = await _assignmentService.GetAssignmentsByTaskIdAsync(taskItemId);
-            return Ok(response);
-        } 
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        var response = await _assignmentService.GetAssignmentsByTaskIdAsync(taskItemId);
+        return Ok(response);
     }
     
     // Get All asignments of Task Item by TaskId
     [HttpGet("{id}")]
     public async Task<ActionResult<AssignmentResponseDto>> GetAssignmentsByIdAsync(Guid id)
     {
-        try
-        {
-            var response = await _assignmentService.GetAssignmentsByIdAsync(id);
-            return Ok(response);
-        } 
-        catch (NotFoundException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.NotFound, "Assignment not found", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.NotFound, errorResponse);
-        }
-        catch (RepositoryException ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Database error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ErrorResponse((int)ErrorStatus.InternalServerError, "Internal server error", ex.Message,_logger);
-            return StatusCode((int)ErrorStatus.InternalServerError, errorResponse);
-        }
+        var response = await _assignmentService.GetAssignmentsByIdAsync(id);
+        return Ok(response);
     }
     
 }
