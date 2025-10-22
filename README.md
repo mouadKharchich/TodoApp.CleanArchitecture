@@ -33,7 +33,7 @@ This project uses **SQL Server** as the database provider and **xUnit** for unit
 The project follows **Clean Architecture principles**:
 
 - **Domain Layer**: Contains entities, enums, and domain logic.
-- **Application Layer**: Contains DTOs, service interfaces, and business logic.
+- **Application Layer**: Contains DTOs, service interfaces, and business logic , Mapping , Validators,Common.
 - **Infrastructure Layer**: Database context and repository implementations.
 - **API Layer**: ASP.NET Core Web API exposing endpoints.
 - **Tests Layer**: Unit tests using xUnit.
