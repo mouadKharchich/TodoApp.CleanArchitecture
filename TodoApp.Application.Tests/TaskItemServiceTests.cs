@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using TodoApp.Application.Common.Exceptions;
 using TodoApp.Application.Dtos.TaskItem;
+using TodoApp.Application.Interfaces;
 using TodoApp.Application.Interfaces.IRepositories;
 using TodoApp.Application.Services;
 using TodoApp.Domain.Entities;
-using TodoApp.Domain.Enums;
 using Xunit;
 using TaskStatus = TodoApp.Domain.Enums.TaskStatus;
 
@@ -21,16 +17,19 @@ namespace TodoApp.Tests.Services
         private readonly Mock<IUserRepository> _userRepoMock;
         private readonly Mock<IAssignmentRepository> _assignmentRepoMock;
         private readonly TaskItemService _service;
+        private readonly Mock<IDatabaseTransaction> _mockTransactionMock;
 
         public TaskItemServiceTests()
         {
             _taskRepoMock = new Mock<ITaskItemRepository>();
             _userRepoMock = new Mock<IUserRepository>();
             _assignmentRepoMock = new Mock<IAssignmentRepository>();
+            _mockTransactionMock = new Mock<IDatabaseTransaction>();
             _service = new TaskItemService(
                 _taskRepoMock.Object,
                 _userRepoMock.Object,
-                _assignmentRepoMock.Object
+                _assignmentRepoMock.Object,
+                _mockTransactionMock.Object
             );
         }
 
@@ -95,20 +94,55 @@ namespace TodoApp.Tests.Services
                 UserId = userPublicId
             };
 
-            var createdTask = new TaskItem { TaskItemId = 1, PublicId = Guid.NewGuid(), Title = "New Task" };
+            var taskEntity = new TaskItem
+            {
+                TaskItemId = 10,
+                PublicId = Guid.NewGuid(),
+                Title = taskDto.Title,
+                Description = taskDto.Description
+            };
 
-            _taskRepoMock.Setup(r => r.CreateTaskAsync(It.IsAny<TaskItem>()))
-                .ReturnsAsync(createdTask);
-            _userRepoMock.Setup(r => r.GetUserByIdAsync(userPublicId))
+            var returnedTaskEntity = new TaskItem
+            {
+                TaskItemId = 10,
+                PublicId = taskEntity.PublicId,
+                Title = taskDto.Title,
+                Description = taskDto.Description
+            };
+
+            // Mock repository behavior
+            _taskRepoMock
+                .Setup(r => r.CreateTaskAsync(It.IsAny<TaskItem>()))
+                .Returns(Task.CompletedTask);
+
+            _userRepoMock
+                .Setup(r => r.GetUserByIdAsync(userPublicId))
                 .ReturnsAsync(userEntity);
+
+            _assignmentRepoMock
+                .Setup(r => r.AddAssignmentAsync(It.IsAny<Assignment>()))
+                .Returns(Task.CompletedTask);
+
+            _taskRepoMock
+                .Setup(r => r.GetTaskByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(returnedTaskEntity);
+
+            _mockTransactionMock
+                .Setup(r => r.SaveChangesAsync())
+                .ReturnsAsync(1);
 
             // Act
             var result = await _service.AddTaskAsync(taskDto);
 
             // Assert
+            result.Should().NotBeNull();
             result.Title.Should().Be("New Task");
-            _assignmentRepoMock.Verify(r => r.AddAsignmentAsync(It.IsAny<Assignment>()), Times.Once);
+
+            _taskRepoMock.Verify(r => r.CreateTaskAsync(It.IsAny<TaskItem>()), Times.Once);
+            _assignmentRepoMock.Verify(r => r.AddAssignmentAsync(It.IsAny<Assignment>()), Times.Once);
+            _mockTransactionMock.Verify(r => r.SaveChangesAsync(), Times.Once);
         }
+
 
         [Fact]
         public async Task AddTaskAsync_ShouldThrowNotFound_WhenUserDoesNotExist()
@@ -120,8 +154,7 @@ namespace TodoApp.Tests.Services
                 UserId = Guid.NewGuid()
             };
 
-            _taskRepoMock.Setup(r => r.CreateTaskAsync(It.IsAny<TaskItem>()))
-                .ReturnsAsync(new TaskItem());
+            _taskRepoMock.Setup(r => r.CreateTaskAsync(It.IsAny<TaskItem>()));
             _userRepoMock.Setup(r => r.GetUserByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync((User?)null);
 
@@ -185,7 +218,7 @@ namespace TodoApp.Tests.Services
             // Assert
             result.Should().NotBeNull();
             _taskRepoMock.Verify(r => r.UpdateTaskAsync(It.Is<TaskItem>(t => t.UserId == 5)), Times.Once);
-            _assignmentRepoMock.Verify(r => r.AddAsignmentAsync(It.IsAny<Assignment>()), Times.Once);
+            _assignmentRepoMock.Verify(r => r.AddAssignmentAsync(It.IsAny<Assignment>()), Times.Once);
         }
     }
 }

@@ -28,6 +28,5 @@ public class TaskItemRequestDto
     [DataType(DataType.Date)]
     public DateTime Deadline { get; set; }
     
-    [Range(1, int.MaxValue, ErrorMessage = "Invalid UserId")]
     public Guid? UserId { get; set; }
 }

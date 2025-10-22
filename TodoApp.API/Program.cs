@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using TodoApp.API.Middlewares;
 using TodoApp.Application.Dtos.JWT;
+using TodoApp.Application.Interfaces;
 using TodoApp.Application.Interfaces.IRepositories;
 using TodoApp.Application.Interfaces.IServices;
 using TodoApp.Application.Services;
@@ -29,6 +31,7 @@ builder.Services.AddSwaggerGen();
 // Dependecies configurations
 
 // Repositories Dependecies
+builder.Services.AddScoped<IDatabaseTransaction, DatabaseTransaction>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskItemRepository, TaskItemRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
@@ -159,6 +162,7 @@ if (app.Environment.IsDevelopment())
 
 }
 
+//app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

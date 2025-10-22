@@ -18,5 +18,7 @@
     &lt;TestId&gt;xUnit::768A534E-BF6B-4DD3-B69E-2833B80282F2::net6.0::TodoApp.Application.Tests.UserServiceTests.GetUserByIdWithTasksAsync_ShouldThrowNotFoundException_WhenNotExists&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::768A534E-BF6B-4DD3-B69E-2833B80282F2::net6.0::TodoApp.Application.Tests.UserServiceTests.RegisterUserAsync_ShouldCreateUser_WhenEmailIsUnique&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::768A534E-BF6B-4DD3-B69E-2833B80282F2::net6.0::TodoApp.Tests.Services.TaskItemServiceTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::768A534E-BF6B-4DD3-B69E-2833B80282F2::net6.0::TodoApp.Application.Tests.AssignmentServiceTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::768A534E-BF6B-4DD3-B69E-2833B80282F2::net6.0::TodoApp.Application.Tests.UserServiceTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

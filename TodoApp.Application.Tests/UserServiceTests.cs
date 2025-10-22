@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
+using FluentAssertions;
 using Moq;
 using TodoApp.Application.Common.Exceptions;
 using TodoApp.Application.Dtos.User;
+using TodoApp.Application.Interfaces;
 using TodoApp.Application.Interfaces.IRepositories;
 using TodoApp.Application.Interfaces.IServices;
 using TodoApp.Application.Services;
@@ -14,13 +16,15 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<IJwtService> _mockJwtService;
+    private readonly Mock<IDatabaseTransaction> _mockTransactionMock;
     private readonly IUserService _userService;
 
     public UserServiceTests()
     {
         _mockUserRepository = new Mock<IUserRepository>();
         _mockJwtService = new Mock<IJwtService>();
-        _userService = new UserService(_mockUserRepository.Object, _mockJwtService.Object);
+        _mockTransactionMock = new Mock<IDatabaseTransaction>();
+        _userService = new UserService(_mockUserRepository.Object, _mockJwtService.Object, _mockTransactionMock.Object);
     }
     
     [Fact]
@@ -111,18 +115,39 @@ public class UserServiceTests
             Password = "Password123"
         };
 
-        _mockUserRepository.Setup(r => r.GetUserByEmailAsync(registerDto.Email)).ReturnsAsync((User?)null);
+        var createdUserEntity = new User
+        {
+            UserId = 1,
+            PublicId = Guid.NewGuid(),
+            Username = registerDto.Username,
+            Email = registerDto.Email,
+            PasswordHash = "hashedPassword"
+        };
 
-        var createdUser = new User { PublicId = Guid.NewGuid(), Username = "TestUser", Email = "unique@test.com" };
-        _mockUserRepository.Setup(r => r.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(createdUser);
+        // Mock: user with this email 
+        _mockUserRepository
+            .SetupSequence(r => r.GetUserByEmailAsync(registerDto.Email))
+            .ReturnsAsync((User?)null) 
+            .ReturnsAsync(createdUserEntity);
+
+        _mockUserRepository
+            .Setup(r => r.CreateUserAsync(It.IsAny<User>()))
+            .Returns(Task.CompletedTask);
+
+        _mockTransactionMock
+            .Setup(r => r.SaveChangesAsync())
+            .ReturnsAsync(1);
+        
 
         // Act
         var result = await _userService.RegisterUserAsync(registerDto);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("TestUser", result.Username);
+        result.Should().NotBeNull();
+        result.Username.Should().Be("TestUser");
+        result.Email.Should().Be("unique@test.com");
     }
+
     
     [Fact]
     public async Task RegisterUserAsync_ShouldThrowArgumentException_WhenEmailExists()
@@ -137,7 +162,8 @@ public class UserServiceTests
 
         var existingUser = new User { PublicId = Guid.NewGuid(), Email = "existing@test.com" };
         _mockUserRepository.Setup(r => r.GetUserByEmailAsync(registerDto.Email)).ReturnsAsync(existingUser);
-
+        
+        
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => _userService.RegisterUserAsync(registerDto));
     }

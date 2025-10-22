@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using TodoApp.Application.Common.Exceptions;
 using TodoApp.Application.Dtos.User;
+using TodoApp.Application.Interfaces;
 using TodoApp.Application.Interfaces.IRepositories;
 using TodoApp.Application.Interfaces.IServices;
 using TodoApp.Application.Mappings;
@@ -15,11 +16,16 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IJwtService _jwtService;
+    private readonly IDatabaseTransaction _transaction;
     
-    public UserService(IUserRepository userRepository,IJwtService jwtService)
+    public UserService(
+        IUserRepository userRepository,
+        IJwtService jwtService,
+        IDatabaseTransaction transaction)
     {
         _userRepository = userRepository;
         _jwtService = jwtService;
+        _transaction = transaction;
     }
 
     #region Public Methods
@@ -39,11 +45,18 @@ public class UserService : IUserService
     /// </summary>
     /// <param name="uid">The unique ID of the user.</param>
     /// <returns>A <see cref="UserResponseDto"/> if found; otherwise, throws <see cref="NotFoundException"/>.</returns>
-    public async Task<UserResponseDto?> GetUserByIdAsync(Guid uid)
+    public async Task<UserResponseDto?> GetUserByIdAsync(Guid? uid)
     {
+        if (!uid.HasValue || uid == Guid.Empty)
+        {
+            throw new ArgumentException("User ID cannot be null or empty.");
+        }
+        
         var userEntity = await _userRepository.GetUserByIdAsync(uid);
-        if (userEntity == null)
+        if (userEntity is null)
+        {
             throw new NotFoundException($"User with ID {uid} not found");
+        }
 
         return UserMapper.ToDto(userEntity);
     }
@@ -54,11 +67,17 @@ public class UserService : IUserService
     /// </summary>
     /// <param name="uid">The unique ID of the user.</param>
     /// <returns>A <see cref="UserResponseDto"/> with associated tasks if found; otherwise, throws <see cref="NotFoundException"/>.</returns>
-    public async Task<UserResponseDto?> GetUserByIdWithTasksAsync(Guid uid)
+    public async Task<UserResponseDto?> GetUserByIdWithTasksAsync(Guid? uid)
     {
+        if (!uid.HasValue || uid == Guid.Empty)
+        {
+            throw new ArgumentException("User ID cannot be null or empty.");
+        }
         var userEntity = await _userRepository.GetUserByIdAsync(uid);
-        if (userEntity == null)
+        if (userEntity is null)
+        {
             throw new NotFoundException($"User with ID {uid} not found");
+        }
 
         return UserMapper.ToDtoWithTasks(userEntity);
     }
@@ -84,7 +103,11 @@ public class UserService : IUserService
         userEntity.PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerUserDto.Password);
         
         // Persist the entity using repository
-        var createdUser = await _userRepository.CreateUserAsync(userEntity);
+        await _userRepository.CreateUserAsync(userEntity);
+        await _transaction.SaveChangesAsync();
+        
+        // Get CreatedUser 
+        var createdUser = await _userRepository.GetUserByEmailAsync(registerUserDto.Email);
 
         // Map back to response DTO
         return UserMapper.ToDto(createdUser);
@@ -138,7 +161,7 @@ public class UserService : IUserService
     {
         var user = await _userRepository.GetUserByEmailAsync(dto.Email);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {
             throw new UnauthorizedAccessException("Incorrect Email or Password.");
         }

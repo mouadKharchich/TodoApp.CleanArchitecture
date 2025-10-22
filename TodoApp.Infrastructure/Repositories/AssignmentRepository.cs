@@ -15,11 +15,12 @@ public class AssignmentRepository:IAssignmentRepository
         _dbContext = dbContext;
     }
 
-    public async Task<IEnumerable<Assignment>> GetAllAsignmentsAsync()
+    public async Task<IEnumerable<Assignment>> GetAllAssignmentsAsync()
     {
         try
         {
             return await _dbContext.Assignments
+                .AsNoTracking()
                 .Include(t => t.User)
                 .Include(t => t.TaskItem)
                 .ToListAsync();
@@ -30,55 +31,45 @@ public class AssignmentRepository:IAssignmentRepository
         }
     }
 
-    public async Task<Assignment> GetAsignmentByIdAsync(Guid asignmentId)
+    public async Task<Assignment?> GetAssignmentByIdAsync(Guid? assignmentId)
     {
         try
         {
             var task = await _dbContext.Assignments
                 .Include(t => t.User)
                 .Include(t => t.TaskItem)
-                .FirstOrDefaultAsync(t => t.PublicId == asignmentId);
-
-            if (task == null)
-                throw new NotFoundException($"Assignment with asignmentId {asignmentId} not found.");
-
+                .FirstOrDefaultAsync(t => t.PublicId == assignmentId);
             return task;
-        }
-        catch (NotFoundException)
-        {
-            throw;
         }
         catch (Exception ex)
         {
-            throw new RepositoryException($"Error fetching Assignment with asignmentId {asignmentId} from database: {ex.Message}", ex);
+            throw new RepositoryException($"Error fetching Assignment with asignmentId {assignmentId} from database: {ex.Message}", ex);
         }
     }
     
-    public async Task<IEnumerable<Assignment>> GetAsignmentsByTaskIdAsync(Guid taskItemasignmentId)
+    public async Task<IEnumerable<Assignment>> GetAssignmentsByTaskIdAsync(Guid? taskItemId)
     {
         try
         {
             var tasks = await _dbContext.Assignments
                 .Include(t => t.User)
                 .Include(t => t.TaskItem)
-                .Where(t => t.TaskItem!=null && t.TaskItem.PublicId == taskItemasignmentId)
+                .Where(t => t.TaskItem!=null && t.TaskItem.PublicId == taskItemId)
                 .ToListAsync();
 
             return tasks;
         }
         catch (Exception ex)
         {
-            throw new RepositoryException($"Error fetching Assignment with TaskasignmentId {taskItemasignmentId} from database: {ex.Message}", ex);
+            throw new RepositoryException($"Error fetching Assignment with TaskItemId {taskItemId} from database: {ex.Message}", ex);
         }
     }
 
-    public async Task<Assignment> AddAsignmentAsync(Assignment assignment)
+    public async Task AddAssignmentAsync(Assignment assignment)
     {
         try
         {
-            _dbContext.Assignments.Add(assignment);
-            await _dbContext.SaveChangesAsync();
-            return await GetAsignmentByIdAsync(assignment.PublicId);
+           await _dbContext.Assignments.AddAsync(assignment);
         }
         catch (Exception ex)
         {

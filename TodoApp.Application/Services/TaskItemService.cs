@@ -1,5 +1,6 @@
 using TodoApp.Application.Common.Exceptions;
 using TodoApp.Application.Dtos.TaskItem;
+using TodoApp.Application.Interfaces;
 using TodoApp.Application.Interfaces.IRepositories;
 using TodoApp.Application.Interfaces.IServices;
 using TodoApp.Application.Mappings;
@@ -18,15 +19,18 @@ public class TaskItemService : ITaskItemService
     private readonly ITaskItemRepository _taskItemRepository;
     private readonly IUserRepository _userRepository;
     private readonly IAssignmentRepository _assignmentRepository;
+    private readonly IDatabaseTransaction _transaction;
 
     public TaskItemService(
         ITaskItemRepository taskItemRepository,
         IUserRepository userRepository,
-        IAssignmentRepository assignmentRepository)
+        IAssignmentRepository assignmentRepository,
+        IDatabaseTransaction transaction)
     {
         _taskItemRepository = taskItemRepository;
         _userRepository = userRepository;
         _assignmentRepository = assignmentRepository;
+        _transaction = transaction;
     }
 
     /// <summary>
@@ -93,12 +97,16 @@ public class TaskItemService : ITaskItemService
     /// <summary>
     /// Retrieves a specific task by ID.
     /// </summary>
-    /// <param name="id">Task ID</param>
-    public async Task<TaskItemResponseDto> GetTaskByIdAsync(Guid id)
+    /// <param name="taskId">Task ID</param>
+    public async Task<TaskItemResponseDto> GetTaskByIdAsync(Guid? taskId)
     {
-        var taskItem = await _taskItemRepository.GetTaskByIdAsync(id);
-        if (taskItem == null)
-            throw new NotFoundException($"Task Item with ID {id} not found");
+        if (taskId is null|| taskId == Guid.Empty)
+        {
+            throw new ArgumentException("Task ID cannot be null or empty.");
+        }
+        var taskItem = await _taskItemRepository.GetTaskByIdAsync(taskId);
+        if (taskItem is null)
+            throw new NotFoundException($"Task Item with ID {taskId} not found");
 
         return TaskItemMapper.ToDto(taskItem);
     }
@@ -108,17 +116,25 @@ public class TaskItemService : ITaskItemService
     /// </summary>
     public async Task<TaskItemResponseDto> AddTaskAsync(TaskItemRequestDto taskItemDto)
     {
-        var taskItemEntity = TaskItemMapper.ToEntity(taskItemDto);
-        var createdTask = await _taskItemRepository.CreateTaskAsync(taskItemEntity);
-        
         // Get user by UserPublicId
-        var user = await _userRepository.GetUserByIdAsync(taskItemDto.UserId ?? Guid.Empty)
-                   ?? throw new NotFoundException($"User with Id {taskItemDto.UserId} not found");
+        var user = await _userRepository.GetUserByIdAsync(taskItemDto.UserId ?? Guid.Empty);
+        
+        var taskItemEntity = TaskItemMapper.ToEntity(taskItemDto);
+        taskItemEntity.UserId = user?.UserId;
+        taskItemEntity.User = user;
+        
+        await _taskItemRepository.CreateTaskAsync(taskItemEntity);
+        await _transaction.SaveChangesAsync();
         
         // Add History of Assignment To Track every change in assignment task
-        var assignment = new Assignment() { TaskItemId = taskItemEntity.TaskItemId, UserId = user.UserId };
-        await _assignmentRepository.AddAsignmentAsync(assignment);
+        if (user is not null)
+        { 
+            var assignment = new Assignment() { TaskItemId = taskItemEntity.TaskItemId, UserId = user.UserId };
+            await _assignmentRepository.AddAssignmentAsync(assignment);
+            await _transaction.SaveChangesAsync();
+        }
         
+        var createdTask = await _taskItemRepository.GetTaskByIdAsync(taskItemEntity.PublicId);
         return TaskItemMapper.ToDto(createdTask);
     }
 
@@ -128,12 +144,16 @@ public class TaskItemService : ITaskItemService
     public async Task<TaskItemResponseDto> UpdateTaskAsync(Guid? taskId, TaskItemUpdateDto taskDto)
     {
         var taskEntity = await _taskItemRepository.GetTaskByIdAsync(taskId);
-        if (taskEntity == null)
+        if (taskEntity is null)
+        {
             throw new NotFoundException($"Task Item with ID {taskId} not found");
+        }
 
         TaskItemMapper.ToUpdatedEntity(taskEntity, taskDto);
+        
         await _taskItemRepository.UpdateTaskAsync(taskEntity);
-
+        await _transaction.SaveChangesAsync();
+        
         return TaskItemMapper.ToDto(taskEntity);
     }
 
@@ -143,10 +163,15 @@ public class TaskItemService : ITaskItemService
     public async Task DeleteTaskAsync(Guid taskId)
     {
         var task = await _taskItemRepository.GetTaskByIdAsync(taskId);
-        if (task == null)
+        if (task is null)
+        {
             throw new NotFoundException($"Task Item with ID {taskId} not found");
+        }
 
         await _taskItemRepository.DeleteTaskAsync(taskId);
+        
+        // Execute Transaction
+        await _transaction.SaveChangesAsync();
     }
 
     /// <summary>
@@ -167,8 +192,11 @@ public class TaskItemService : ITaskItemService
         
         // Add History of Assignment To Track every change in assignment task
         var assignment = new Assignment() { TaskItemId = task.TaskItemId, UserId = user.UserId };
-        await _assignmentRepository.AddAsignmentAsync(assignment);
+        await _assignmentRepository.AddAssignmentAsync(assignment);
         
+        // Execute Transaction
+        await _transaction.SaveChangesAsync();
+
         // return map task
         return TaskItemMapper.ToDto(task);
     }
@@ -184,6 +212,9 @@ public class TaskItemService : ITaskItemService
         task.Priority = priority;
         await _taskItemRepository.UpdateTaskAsync(task);
 
+        // Execute Transaction
+        await _transaction.SaveChangesAsync();
+        
         return TaskItemMapper.ToDto(task);
     }
 
@@ -198,6 +229,9 @@ public class TaskItemService : ITaskItemService
         task.Status = status;
         await _taskItemRepository.UpdateTaskAsync(task);
 
+        // Execute Transaction
+        await _transaction.SaveChangesAsync();
+        
         return TaskItemMapper.ToDto(task);
     }
 }

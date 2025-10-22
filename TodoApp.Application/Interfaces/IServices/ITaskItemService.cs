@@ -8,7 +8,7 @@ public interface ITaskItemService
 {
     Task<IEnumerable<TaskItemResponseDto>> GetAllTasksAsync();
     Task<PaginatedTaskItemResponse> GetTasksByQueryAsync(TaskItemQueryParameters queryParameters);
-    Task<TaskItemResponseDto?> GetTaskByIdAsync(Guid id);
+    Task<TaskItemResponseDto?> GetTaskByIdAsync(Guid? taskId);
     Task<TaskItemResponseDto> AddTaskAsync(TaskItemRequestDto taskItem);
     Task<TaskItemResponseDto> UpdateTaskAsync(Guid? id,TaskItemUpdateDto taskItem);
     Task DeleteTaskAsync(Guid id);

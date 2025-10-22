@@ -28,7 +28,7 @@ public class AssignmentController: ControllerBase
     {
         try
         {
-            var response = await _assignmentService.GetAllAsignmentsAsync();
+            var response = await _assignmentService.GetAllAssignmentsAsync();
             return Ok(response);
         } 
         catch (RepositoryException ex)
@@ -49,7 +49,7 @@ public class AssignmentController: ControllerBase
     {
         try
         {
-            var response = await _assignmentService.GetAsignmentsByTaskIdAsync(taskItemId);
+            var response = await _assignmentService.GetAssignmentsByTaskIdAsync(taskItemId);
             return Ok(response);
         } 
         catch (RepositoryException ex)
@@ -70,7 +70,7 @@ public class AssignmentController: ControllerBase
     {
         try
         {
-            var response = await _assignmentService.GetAsignmentsByIdAsync(id);
+            var response = await _assignmentService.GetAssignmentsByIdAsync(id);
             return Ok(response);
         } 
         catch (NotFoundException ex)

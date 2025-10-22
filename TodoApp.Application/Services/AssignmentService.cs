@@ -14,23 +14,43 @@ public class AssignmentService : IAssignmentService
     {
         _assignmentRepository = assignmentRepository;
     }
-    public async Task<IEnumerable<AssignmentResponseDto>> GetAllAsignmentsAsync()
+    
+    /// <summary>
+    /// Retrieves all assignments from the database.
+    /// </summary>
+    public async Task<IEnumerable<AssignmentResponseDto>> GetAllAssignmentsAsync()
     {
-        var assignments = await _assignmentRepository.GetAllAsignmentsAsync();
+        var assignments = await _assignmentRepository.GetAllAssignmentsAsync();
         return assignments.Select(AssignmentMapper.ToDto);
     }
 
-    public async Task<IEnumerable<AssignmentResponseDto>> GetAsignmentsByTaskIdAsync(Guid taskItemId)
+    /// <summary>
+    /// Retrieves a specific assignment by taskItemId.
+    /// </summary>
+    public async Task<IEnumerable<AssignmentResponseDto>> GetAssignmentsByTaskIdAsync(Guid? taskItemId)
     {
-        var assignments = await _assignmentRepository.GetAsignmentsByTaskIdAsync(taskItemId);
+        if (!taskItemId.HasValue)
+        {
+            throw new ArgumentException("Task ID cannot be null or empty.");
+        }
+        var assignments = await _assignmentRepository.GetAssignmentsByTaskIdAsync(taskItemId);
         return assignments.Select(AssignmentMapper.ToDto);
     }
 
-    public async Task<AssignmentResponseDto> GetAsignmentsByIdAsync(Guid asignmentId)
+    /// <summary>
+    /// Retrieves a specific assignment by assignmentId.
+    /// </summary>
+    public async Task<AssignmentResponseDto> GetAssignmentsByIdAsync(Guid? assignmentId)
     {
-        var assignment = await _assignmentRepository.GetAsignmentByIdAsync(asignmentId);
-        if (assignment == null)
-            throw new NotFoundException($"Task Item with ID {asignmentId} not found");
+        if (!assignmentId.HasValue)
+        {
+            throw new ArgumentException("Assignment ID cannot be null or empty.");
+        }
+        var assignment = await _assignmentRepository.GetAssignmentByIdAsync(assignmentId);
+        if (assignment is null)
+        {
+            throw new NotFoundException($"Task Item with ID {assignmentId} not found");
+        }
         return AssignmentMapper.ToDto(assignment);
     }
 }

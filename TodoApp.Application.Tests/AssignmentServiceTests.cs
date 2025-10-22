@@ -30,11 +30,11 @@ public class AssignmentServiceTests
         };
 
         _mockAssignmentRepository
-            .Setup(r => r.GetAllAsignmentsAsync())
+            .Setup(r => r.GetAllAssignmentsAsync())
             .ReturnsAsync(mockAssignments);
 
         // Act 
-        var result = await _assignmentService.GetAllAsignmentsAsync();
+        var result = await _assignmentService.GetAllAssignmentsAsync();
         
         //Assert
         Assert.NotNull(result);
@@ -63,11 +63,11 @@ public class AssignmentServiceTests
         };
 
         _mockAssignmentRepository
-            .Setup(r => r.GetAsignmentsByTaskIdAsync(taskId))
+            .Setup(r => r.GetAssignmentsByTaskIdAsync(taskId))
             .ReturnsAsync(mockAssignments);
 
         // Act
-        var result = await _assignmentService.GetAsignmentsByTaskIdAsync(taskId);
+        var result = await _assignmentService.GetAssignmentsByTaskIdAsync(taskId);
 
         // Assert
         Assert.Single(result);
@@ -95,11 +95,11 @@ public class AssignmentServiceTests
             }};
 
         _mockAssignmentRepository
-            .Setup(r => r.GetAsignmentByIdAsync(assignmentId))
+            .Setup(r => r.GetAssignmentByIdAsync(assignmentId))
             .ReturnsAsync(mockAssignment);
 
         // Act
-        var result = await _assignmentService.GetAsignmentsByIdAsync(assignmentId);
+        var result = await _assignmentService.GetAssignmentsByIdAsync(assignmentId);
 
         // Assert
         Assert.NotNull(result);
@@ -112,12 +112,12 @@ public class AssignmentServiceTests
         // Arrange
         var assignmentId = Guid.NewGuid();
         _mockAssignmentRepository
-            .Setup(r => r.GetAsignmentByIdAsync(assignmentId))
+            .Setup(r => r.GetAssignmentByIdAsync(assignmentId))
             .ReturnsAsync((Assignment?)null);
 
         // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(
-            () => _assignmentService.GetAsignmentsByIdAsync(assignmentId)
+            () => _assignmentService.GetAssignmentsByIdAsync(assignmentId)
         );
     }
     

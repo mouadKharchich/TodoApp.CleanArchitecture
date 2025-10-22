@@ -9,7 +9,6 @@ namespace TodoApp.Infrastructure.Repositories;
 public class TaskItemRepository : ITaskItemRepository
 {
     private readonly AppDbContext _dbContext;
-    private ITaskItemRepository _taskItemRepositoryImplementation;
 
     public TaskItemRepository(AppDbContext dbContext)
     {
@@ -23,6 +22,7 @@ public class TaskItemRepository : ITaskItemRepository
         try
         {
             return await _dbContext.TaskItems
+                .AsNoTracking()
                 .Include(t => t.User)
                 .Include(t => t.Assignments)
                 .ToListAsync();
@@ -38,6 +38,7 @@ public class TaskItemRepository : ITaskItemRepository
         try
         {
             return _dbContext.TaskItems
+                .AsNoTracking()
                 .Include(t => t.User)
                 .Include(t => t.Assignments)
                 .AsQueryable();
@@ -48,7 +49,7 @@ public class TaskItemRepository : ITaskItemRepository
         }
     }
 
-    public async Task<TaskItem> GetTaskByIdAsync(Guid? taskId)
+    public async Task<TaskItem?> GetTaskByIdAsync(Guid? taskId)
     {
         try
         {
@@ -57,14 +58,7 @@ public class TaskItemRepository : ITaskItemRepository
                 .Include(t => t.Assignments)
                 .FirstOrDefaultAsync(t => t.PublicId == taskId);
 
-            if (task == null)
-                throw new NotFoundException($"Task with ID {taskId} not found.");
-
             return task;
-        }
-        catch (NotFoundException)
-        {
-            throw;
         }
         catch (Exception ex)
         {
@@ -72,14 +66,11 @@ public class TaskItemRepository : ITaskItemRepository
         }
     }
 
-    public async Task<TaskItem> CreateTaskAsync(TaskItem taskItem)
+    public async Task CreateTaskAsync(TaskItem taskItem)
     {
         try
         {
-            _dbContext.TaskItems.Add(taskItem);
-            await _dbContext.SaveChangesAsync();
-
-            return await GetTaskByIdAsync(taskItem.PublicId);
+            await _dbContext.TaskItems.AddAsync(taskItem);
         }
         catch (Exception ex)
         {
@@ -91,14 +82,12 @@ public class TaskItemRepository : ITaskItemRepository
     {
         try
         {
-            await EnsureTaskExistsAsync(taskItem.TaskItemId);
-
+            await EnsureTaskExistsAsync(taskItem.PublicId);
             _dbContext.TaskItems.Update(taskItem);
-            await _dbContext.SaveChangesAsync();
         }
-        catch (NotFoundException)
+        catch (DbUpdateConcurrencyException ex)
         {
-            throw;
+            throw new RepositoryException($"Concurrency error while updating Task  {taskItem.PublicId}: {ex.Message}", ex);
         }
         catch (Exception ex)
         {
@@ -110,9 +99,8 @@ public class TaskItemRepository : ITaskItemRepository
     {
         try
         {
-            var taskItem = await GetTaskByIdAsync(taskId); // already throws if not found
+            var taskItem = await GetTaskByIdAsync(taskId); // throws if not found
             _dbContext.TaskItems.Remove(taskItem);
-            await _dbContext.SaveChangesAsync();
         }
         catch (Exception ex)
         {
@@ -127,9 +115,9 @@ public class TaskItemRepository : ITaskItemRepository
     /// <summary>
     /// Checks if a task exists by internal TaskItemId. Throws NotFoundException if not.
     /// </summary>
-    private async Task EnsureTaskExistsAsync(int taskItemId)
+    private async Task EnsureTaskExistsAsync(Guid taskItemId)
     {
-        var exists = await _dbContext.TaskItems.AnyAsync(t => t.TaskItemId == taskItemId);
+        var exists = await _dbContext.TaskItems.AnyAsync(t => t.PublicId == taskItemId);
         if (!exists)
             throw new NotFoundException($"Task with ID {taskItemId} not found.");
     }

@@ -4,7 +4,7 @@ namespace TodoApp.Application.Interfaces.IServices;
 
 public interface IAssignmentService
 {
-    Task<IEnumerable<AssignmentResponseDto>> GetAllAsignmentsAsync();
-    Task<IEnumerable<AssignmentResponseDto>> GetAsignmentsByTaskIdAsync(Guid taskItemId);
-    Task<AssignmentResponseDto> GetAsignmentsByIdAsync(Guid id);
+    Task<IEnumerable<AssignmentResponseDto>> GetAllAssignmentsAsync();
+    Task<IEnumerable<AssignmentResponseDto>> GetAssignmentsByTaskIdAsync(Guid? taskItemId);
+    Task<AssignmentResponseDto> GetAssignmentsByIdAsync(Guid? assignmentId);
 }

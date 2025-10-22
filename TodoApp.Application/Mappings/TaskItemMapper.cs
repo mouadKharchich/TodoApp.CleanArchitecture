@@ -11,7 +11,6 @@ public class TaskItemMapper
             {
                 Title = dto.Title,
                 Description = dto.Description,
-                PublicId = dto.UserId ?? Guid.Empty,
                 Status = dto.Status,
                 Priority = dto.Priority,
                 Deadline = dto.Deadline,
@@ -47,8 +46,6 @@ public class TaskItemMapper
         {
             entity.Title = dto.Title ?? entity.Title;
             entity.Description = dto.Description ?? entity.Description;
-            entity.Status = dto.Status ?? entity.Status;
-            entity.Priority = dto.Priority ?? entity.Priority;
             entity.Deadline = dto.Deadline ?? entity.Deadline;
             entity.UpdatedAt = DateTime.UtcNow;
         }

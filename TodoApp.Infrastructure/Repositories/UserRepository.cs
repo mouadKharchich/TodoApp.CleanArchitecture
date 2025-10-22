@@ -15,11 +15,13 @@ public class UserRepository : IUserRepository
         _dbContext = dbContext;
     }
 
+    #region Public Methods
     public async Task<IEnumerable<User>> GetAllUsersAsync()
     {
         try
         {
             return await _dbContext.Users
+                .AsNoTracking()
                 .Include(u => u.Tasks)
                 .ToListAsync();
         }
@@ -29,22 +31,16 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public async Task<User?> GetUserByIdAsync(Guid uid)
+    public async Task<User?> GetUserByIdAsync(Guid? uid)
     {
         try
         {
             var user = await _dbContext.Users
                 .Include(u => u.Tasks)
+                .ThenInclude(u => u.Assignments)
                 .FirstOrDefaultAsync(u => u.PublicId == uid);
 
-            if (user == null)
-                throw new NotFoundException($"User with ID {uid} not found.");
-
             return user;
-        }
-        catch (NotFoundException)
-        {
-            throw;
         }
         catch (Exception ex)
         {
@@ -67,15 +63,11 @@ public class UserRepository : IUserRepository
         }
     }
     
-    public async Task<User> CreateUserAsync(User user)
+    public async Task CreateUserAsync(User user)
     {
         try
         {
-            _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
-
-            var createdUser = await GetUserByIdAsync(user.PublicId);
-            return createdUser!;
+            await _dbContext.Users.AddAsync(user);
         }
         catch (Exception ex)
         {
@@ -87,8 +79,8 @@ public class UserRepository : IUserRepository
     {
         try
         {
+            await EnsureUserExistsAsync(user.PublicId);
             _dbContext.Users.Update(user);
-            await _dbContext.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -106,15 +98,26 @@ public class UserRepository : IUserRepository
         {
             var user = await GetUserByIdAsync(uid);
             _dbContext.Users.Remove(user!);
-            await _dbContext.SaveChangesAsync();
-        }
-        catch (NotFoundException)
-        {
-            throw;
         }
         catch (Exception ex)
         {
             throw new RepositoryException($"Error deleting user with ID {uid}: {ex.Message}", ex);
         }
     }
+    
+    #endregion
+    
+    #region Private Helpers
+
+    /// <summary>
+    /// Checks if a task exists by internal TaskItemId. Throws NotFoundException if not.
+    /// </summary>
+    private async Task EnsureUserExistsAsync(Guid userId)
+    {
+        var exists = await _dbContext.Users.AnyAsync(t => t.PublicId == userId);
+        if (!exists)
+            throw new NotFoundException($"User with ID {userId} not found.");
+    }
+
+    #endregion
 }
