@@ -32,6 +32,8 @@ This project uses **SQL Server** as the database provider and **xUnit** for unit
 
 The project follows **Clean Architecture principles**:
 
+<img width="223" height="226" alt="download" src="https://github.com/user-attachments/assets/6b8b76ad-0bfd-4d7b-b6a7-1cf9670cfc7e" />
+
 - **Domain Layer**: Contains entities, enums, and domain logic.
 - **Application Layer**: Contains DTOs, service interfaces, and business logic , Mapping , Validators,Common.
 - **Infrastructure Layer**: Database context and repository implementations.
@@ -43,6 +45,11 @@ This separation ensures **high maintainability**, **testability**, and **scalabi
 ---
 
 ## Domain Model
+**User 1** ── * **TaskItem**
+**User** **1** ── * **Assignment**
+**TaskItem** **1** ── * **Assignment**
+
+<img width="500" height="500" alt="3e2e0fe6-df7c-4a1a-a3e6-1c7026749fdb" src="https://github.com/user-attachments/assets/017b5d8d-6e15-4775-91a2-0b762eb3ca24" />
 
 -- **User**
 
